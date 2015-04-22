@@ -128,7 +128,7 @@ pid_t do_fork(int virtual)
     
     t->prio=t->p_parent->prio;
 	t->policy=t->p_parent->policy;
-	//t->start_time=t->exec_time=0;
+	t->start_time=t->exec_time=0;
     /*
      *      Wake our new process
      */
