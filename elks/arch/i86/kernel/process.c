@@ -279,6 +279,11 @@ void kfork_proc(char *addr)
     t->t_regs.cs = get_cs();
     t->t_regs.ds = t->t_regs.ss = get_ds(); /* Run in kernel space */
     arch_build_stack(t, addr);
+    
+     
+	#ifdef CONFIG_CALC_TIME
+		t->start_time=t->exec_time=0;
+	#endif
 }
 
 /*

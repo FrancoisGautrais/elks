@@ -23,4 +23,6 @@ function process() {
     printf '"\t\tAmerican\n\n# EOF.\n' >&3
 }
 
-codes | sort -k 2f | process 3> Config.in 4> keymaps.h
+codes | sort -k 2f | process 3> Config.in 4> keymaps.h 
+tmp=$(cat keymaps.h | grep -v Fichier)
+echo -e "$tmp" > keymaps.h

@@ -121,16 +121,7 @@ void do_exit(int status)
     next_task_slot = current;
     task_slots_unused++;
     wake_up(&parent->child_wait);
-    printk("exit %d\n", current->pid);
     schedule();
-    printk("PANIC : %d ", current->pid);
-    {
-		int i;
-		printk("( ");
-		for(i=0; i<MAX_PRIO; i++) printk("(%d,%d,%d) ", rt_tasks[i]->prev_run, rt_tasks[i], rt_tasks[i]->next_run);
-		printk(")\n");
-	}
-    while(1);
     panic("Returning from sys_exit of %d!\n", current->pid);
 }
 #undef current

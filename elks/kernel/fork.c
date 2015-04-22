@@ -126,13 +126,17 @@ pid_t do_fork(int virtual)
     }
     currentp->p_child = t;
     
-    t->prio=t->p_parent->prio;
-	t->policy=t->p_parent->policy;
-	//t->start_time=t->exec_time=0;
+    #ifdef CONFIG_RT
+		t->prio=t->p_parent->prio;
+		t->policy=t->p_parent->policy;
+	#endif
+	
+	#ifdef CONFIG_CALC_TIME
+		t->start_time=t->exec_time=0;
+	#endif
     /*
      *      Wake our new process
      */
-    //printk("FORK %d parent: %d\n", t->pid, t->p_parent->pid );
     wake_up_process(t);
 
     /*

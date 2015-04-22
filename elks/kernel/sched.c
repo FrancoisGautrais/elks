@@ -33,10 +33,13 @@ extern int intr_count;
 
 static void run_timer_list();
 
+
+
+
 void print_rt_tasks(char* str)
 {
 	int i;
-	//return;
+	return;
 	printk("%s: ( ", str);
 	for(i=0; i<MAX_PRIO; i++) printk("(%x,%x) ", (!rt_tasks[i])?15:rt_tasks[i]->pid, (!rt_tasks[i] || !rt_tasks[i]->next_run)?15:rt_tasks[i]->next_run->pid);
 	printk(")\n");
@@ -77,32 +80,31 @@ void add_to_runqueue(register struct task_struct *p)
 {
 	int i;
     nr_running++;
-    if(p->policy == SCHED_RR || p->policy == SCHED_FIFO )
-    {
-		
-		if(p->prio>= MAX_PRIO)
+    #ifdef CONFIG_RT
+		if(p->policy == SCHED_RR || p->policy == SCHED_FIFO )
 		{
-			printk("Error task %d has too high priority\n", p->prio);
+			
+			if(p->prio>= MAX_PRIO)
+			{
+				printk("Error task %d has too high priority\n", p->prio);
+				return;
+			}
+			
+			if(!rt_tasks[p->prio])
+			{
+				rt_tasks[p->prio]=p;
+				p->prev_run=p->next_run=p;
+			}else
+			{
+				p->prev_run=rt_tasks[p->prio]->prev_run;
+				rt_tasks[p->prio]->prev_run->next_run=p;
+				rt_tasks[p->prio]->prev_run=p;
+				p->next_run=p;
+			}
+			
 			return;
 		}
-		
-		printk("[%d]", p->pid); print_rt_tasks("add: debut :");
-		if(!rt_tasks[p->prio])
-		{
-			rt_tasks[p->prio]=p;
-			p->prev_run=p->next_run=p;
-		}else
-		{
-			p->prev_run=rt_tasks[p->prio]->prev_run;
-			rt_tasks[p->prio]->prev_run->next_run=p;
-			rt_tasks[p->prio]->prev_run=p;
-			p->next_run=p;
-		}
-		
-		
-		print_rt_tasks("add: fin :");
-		return;
-	}
+	#endif
     (p->prev_run = init_task.prev_run)->next_run = p;
     p->next_run = &init_task;
     init_task.prev_run = p;
@@ -118,30 +120,29 @@ void del_from_runqueue(register struct task_struct *p)
 #endif
 
     nr_running--;
-	if(p->policy == SCHED_RR || p->policy == SCHED_FIFO)
-	{
-		/* only one task in rtrq */ 
-		
-		printk("[%d]", p->pid); print_rt_tasks("del: debut :");
-		printk("[%x -> (%x) -> %x]\n", (!p->prev_run)?15:p->prev_run->pid, (!p)?15:p->pid, (!p->next_run)?15:p->next_run->pid);
-		if(p==p->prev_run && p==p->next_run)
+    #ifdef CONFIG_RT
+		if(p->policy == SCHED_RR || p->policy == SCHED_FIFO)
 		{
-			rt_tasks[p->prio]=NULL;
+			/* only one task in rtrq */ 
+			
+			if(p==p->prev_run && p==p->next_run)
+			{
+				rt_tasks[p->prio]=NULL;
+			}
+			else if(p==p->next_run) //on supprime la fin
+			{
+				register __ptask pp=p->prev_run;
+				p->prev_run=p->prev_run->prev_run;
+				pp->next_run=p->prev_run;
+			}else
+			{
+				rt_tasks[p->prio]=p->next_run;
+				p->next_run->prev_run=p->prev_run;
+			}
+			p->next_run = p->prev_run = NULL;
+			return;
 		}
-		else if(p==p->next_run) //on supprime la fin
-		{
-			register __ptask pp=p->prev_run;
-			p->prev_run=p->prev_run->prev_run;
-			pp->next_run=p->prev_run;
-		}else
-		{
-			rt_tasks[p->prio]=p->next_run;
-			p->next_run->prev_run=p->prev_run;
-		}
-		p->next_run = p->prev_run = NULL;
-		print_rt_tasks("del: fin2 :");
-		return;
-	}
+	#endif
 	
     if (p == &init_task) {
         printk("idle task may not sleep\n");
@@ -168,15 +169,18 @@ static void process_timeout(int __data)
     wake_up_process(p);
 }
 
-
-__ptask find_next_task(__ptask prev)
-{
-	prio_pol_t rtt;
-	for(rtt=0; rtt<MAX_PRIO; rtt++)
-		if(rt_tasks[rtt]) 
-			return rt_tasks[rtt];
-	return prev->next_run;
-}
+#ifdef CONFIG_RT
+	__ptask find_next_task(__ptask prev)
+	{
+		prio_pol_t rtt;
+		for(rtt=0; rtt<MAX_PRIO; rtt++)
+			if(rt_tasks[rtt]) 
+				return rt_tasks[rtt];
+		return prev->next_run;
+	}
+#else
+	#define find_next_task(prev) ((prev)->next_run)
+#endif
 
 
 /*
@@ -216,7 +220,6 @@ makerunnable:
 				prev->state = TASK_RUNNING;
 				break;
 			}
-			//if(prev->policy==SCHED_RR || prev->policy==SCHED_FIFO) break;
 			
 		default:
 		/**
@@ -228,10 +231,8 @@ makerunnable:
 			 if(next==prev)
 			 {
 				 next=find_next_task(prev);
-				 printk("next=%d==%d\n", next, prev);
 				 if(!next || next==prev) next=init_task.next_run;
-				 if(next->state == TASK_UNUSED) {printk("Error task unused selected (%d,%d,%d)", next, next->pid, prev); while(1);}
-			     //panic("ici (%d, %d)\n", next->pid);
+				 if(next->state == TASK_UNUSED) panic("Error task unused selected (%d,%d,%d)", next, next->pid, prev);
 			 }
 			/*break; */
 		case TASK_RUNNING:
@@ -239,20 +240,23 @@ makerunnable:
     }
     set_irq();
     
-    
-    
+    #ifdef CONFIG_CALC_TIME
+		prev->exec_time++;
+    #endif
     if(next == &init_task)
         next = next->next_run;
         
     if (intr_count > 0)
         goto scheduling_in_interrupt;
 
-	//printk("c -> %d, %s\n", next->pid, get_task_state_name(next->state));
-	//printk("->%d -> %d %d \n", prev->pid, next->pid, jiffies);
     if (next != prev) {
         struct timer_list timer;
 
-        if ((prev->policy!=SCHED_RR && prev->policy!=SCHED_FIFO) && timeout) {
+        if (
+        #ifdef CONFIG_RT
+				(prev->policy!=SCHED_RR && prev->policy!=SCHED_FIFO) && 
+		#endif
+				timeout) {
             init_timer(&timer);
             timer.tl_expires = timeout; 
             timer.tl_data = (int) prev;
@@ -433,21 +437,19 @@ void sched_init(void)
     t->next_run = t->prev_run = t;
 }
 
+#ifdef CONFIG_RT
 int sys_sched_setscheduler(pid_t pid, int policy,   
 										struct sched_param  *param){
 	__ptask t=find_process_by_pid(pid);
 	struct sched_param p;
 	memcpy_fromfs(&p, param, sizeof(struct sched_param));
-	//printk("sys_sched_setscheduler( %d, %d, %d (%d))\n",pid, policy, &p, p.sched_priority);
 	
 	if(!t) return  -ESRCH;
-	print_rt_tasks("setschedule: debut :");
 	del_from_runqueue(t);
 	
 	t->policy=policy;
 	t->prio=(prio_t)p.sched_priority;
 	add_to_runqueue(t);
-	print_rt_tasks("setschedule: fin :");
 	
 	schedule();
 	
@@ -458,7 +460,6 @@ int sys_sched_setscheduler(pid_t pid, int policy,
 int sys_sched_getscheduler(pid_t pid)
 {
 	__ptask t=find_process_by_pid(pid);
-	//printk("sys_sched_getscheduler(%d) = %d\n",pid,  t->policy);
 	
 	if(!t) return  -ESRCH;
 	
@@ -470,15 +471,12 @@ int sys_sched_setparam(pid_t pid, struct sched_param* param)
 	__ptask t=find_process_by_pid(pid);
 	struct sched_param p;
 	memcpy_fromfs(&p, param, sizeof(struct sched_param));
-	//printk("sys_sched_setparam(%d, %d)\n",pid,  p.sched_priority);
 	
 	if(!t) return  -ESRCH;
 	
-	print_rt_tasks("setparam: debut :");
 	del_from_runqueue(t);
 	t->prio=p.sched_priority;
 	add_to_runqueue(t);
-	print_rt_tasks("setparam: fin :");
 	
 	schedule();
 	return 0;
@@ -488,7 +486,6 @@ int sys_sched_getparam(pid_t pid, struct sched_param* param)
 {
 	__ptask t=find_process_by_pid(pid);
 	struct sched_param p;
-	//printk("sys_sched_getparam(%d) = %d\n",pid,  t->prio);
 	
 	if(!t) return  -ESRCH;
 	p.sched_priority=t->prio;
@@ -496,3 +493,4 @@ int sys_sched_getparam(pid_t pid, struct sched_param* param)
 	
 	return 0;
 }
+#endif //RT

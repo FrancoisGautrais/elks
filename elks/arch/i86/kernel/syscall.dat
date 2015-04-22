@@ -93,10 +93,10 @@ listen		+71	2
 accept		+72	3
 connect		+73	3
 knlvsn          +74     1	= CONFIG_SYS_VERSION
-sched_setparam          +154     2	
-sched_getparam          +155     2	
-sched_setscheduler      +156     3	
-sched_getscheduler      +157     1	
+sched_setparam          +154     2	#= CONFIG_RT
+sched_getparam          +155     2	#= CONFIG_RT	
+sched_setscheduler      +156     3	#= CONFIG_RT
+sched_getscheduler      +157     1	#= CONFIG_RT
 #
 # Name			No	Args	Flag&comment
 #

@@ -14,6 +14,8 @@
 
 #define MAX_PRIO 8
 
+#define CONFIG_RT
+
 #include <linuxmt/types.h>
 #include <linuxmt/fs.h>
 #include <linuxmt/time.h>
@@ -28,6 +30,7 @@
 #endif
 
 #include <arch/param.h>
+
 
 struct file_struct {
     fd_mask_t			close_on_exec;
@@ -78,9 +81,17 @@ struct task_struct {
     gid_t			sgid;
     
 /* Scheduling + status variables */
+
+#ifdef CONFIG_RT
     prio_t 			prio;
     prio_pol_t		policy;
-	//jiff_t 			exec_time;
+#endif
+ 
+#ifdef CONFIG_CALC_TIME
+	jiff_t 			start_time;
+	jiff_t 			exec_time;
+#endif
+	
     __s16			state;
     __u32			timeout;	/* for select() */
     struct wait_queue		*waitpt;	/* Wait pointer */
@@ -142,7 +153,6 @@ typedef struct task_struct __task, *__ptask;
 extern load_regs(__ptask);
 extern save_regs(__ptask);
 
-extern __task task[MAX_TASKS];
 
 extern jiff_t jiffies;
 extern __ptask current;		/* next; */
@@ -193,22 +203,27 @@ extern void select_wait(struct wait_queue *);
 
 
 
+extern __task task[MAX_TASKS];
+	
+	
 /* RT functions */
+#ifdef CONFIG_RT
+	extern __ptask rt_tasks[MAX_PRIO];
+	
+	
+	extern void print_rt_tasks(char* str);
+	extern __ptask find_process_by_pid(pid_t pid);
+	 struct sched_param
+	 {
+		 int sched_priority;
+	 };
 
-//a supprimer
-extern __ptask rt_tasks[MAX_PRIO];
-extern void print_rt_tasks(char* str);
-extern __ptask find_process_by_pid(pid_t pid);
- struct sched_param
- {
-	 int sched_priority;
- };
+	extern int sys_sched_setscheduler(pid_t pid, int policy,
+							struct sched_param *param);
 
-extern int sys_sched_setscheduler(pid_t pid, int policy,
-                        struct sched_param *param);
-
-extern int sys_sched_getscheduler(pid_t pid);
-extern int sys_sched_setparam(pid_t pid, struct sched_param* param);
-extern int sys_sched_getparam(pid_t pid, struct sched_param* param);
+	extern int sys_sched_getscheduler(pid_t pid);
+	extern int sys_sched_setparam(pid_t pid, struct sched_param* param);
+	extern int sys_sched_getparam(pid_t pid, struct sched_param* param);
+#endif
 
 #endif
