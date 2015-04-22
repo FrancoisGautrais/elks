@@ -56,6 +56,9 @@ struct signal_struct {
 
 struct task_struct {
 
+
+/* Timing */
+	
 /* Executive stuff */
     __registers 		t_regs;
     __pptr			t_enddata;
@@ -77,8 +80,7 @@ struct task_struct {
 /* Scheduling + status variables */
     prio_t 			prio;
     prio_pol_t		policy;
-	jiff_t 			start_time;
-	jiff_t 			exec_time;
+	//jiff_t 			exec_time;
     __s16			state;
     __u32			timeout;	/* for select() */
     struct wait_queue		*waitpt;	/* Wait pointer */
