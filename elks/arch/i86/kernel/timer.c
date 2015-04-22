@@ -16,7 +16,7 @@
  */
 
 jiff_t jiffies = 0;
-
+unsigned int __tmp=0;
 extern void do_timer(struct pt_regs *);
 extern void keyboard_irq(int, struct pt_regs *, void *);
 
@@ -45,8 +45,10 @@ extern void keyboard_irq(int, struct pt_regs *, void *);
 
 void timer_tick(int irq, struct pt_regs *regs, void *data)
 {
+	//__u16 timer_tp=TIMER_HI_BYTE<<8+TIMER_LO_BYTE;
     do_timer(regs);
-
+    
+    //printk("-> %d\n",((5+(11931818L/(HZ)))/10));
 #ifndef CONFIG_ARCH_SIBO
 
 #ifndef S_SPLINT_S

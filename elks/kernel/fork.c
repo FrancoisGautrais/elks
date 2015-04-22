@@ -8,6 +8,9 @@
 int task_slots_unused = MAX_TASKS;
 struct task_struct *next_task_slot = task;
 
+
+
+
 pid_t get_pid(void)
 {
     register struct task_struct *p;
@@ -27,6 +30,7 @@ repeat:
 	}
     } while (++p < &task[MAX_TASKS]);
     return last_pid;
+    
 }
 
 /*
@@ -78,21 +82,21 @@ pid_t do_fork(int virtual)
     mm_realloc(currentp->mm.cseg);
 
     if (virtual) {
-	mm_realloc(currentp->mm.dseg);
+		mm_realloc(currentp->mm.dseg);
     } else {
-	t->mm.dseg = mm_dup(currentp->mm.dseg);
+		t->mm.dseg = mm_dup(currentp->mm.dseg);
 
-	if (t->mm.dseg == NULL) {
-	    mm_free(currentp->mm.cseg);
-	    t->state = TASK_UNUSED;
-            task_slots_unused++;
-            next_task_slot = t;
-	    return -ENOMEM;
-	}
+		if (t->mm.dseg == NULL) {
+			mm_free(currentp->mm.cseg);
+			t->state = TASK_UNUSED;
+				task_slots_unused++;
+				next_task_slot = t;
+			return -ENOMEM;
+		}
 
-	t->t_regs.ds = t->t_regs.ss = t->mm.dseg;
+		t->t_regs.ds = t->t_regs.ss = t->mm.dseg;
     }
-
+	
     /*
      *      Build a return stack for t.
      */
@@ -118,40 +122,44 @@ pid_t do_fork(int virtual)
     t->p_nextsib = t->p_child = NULL;
     t->child_lastend = t->lastend_status = 0;
     if ((t->p_prevsib = currentp->p_child) != NULL) {
-	currentp->p_child->p_nextsib = t;
+		currentp->p_child->p_nextsib = t;
     }
     currentp->p_child = t;
-
+    
+    t->prio=t->p_parent->prio;
+	t->policy=t->p_parent->policy;
+	//t->start_time=t->exec_time=0;
     /*
      *      Wake our new process
      */
+    //printk("FORK %d parent: %d\n", t->pid, t->p_parent->pid );
     wake_up_process(t);
 
     /*
      *      Return the created task.
      */
     if (virtual) {
-	/* When the parent returns, the stack frame will have gone so
-	 * save enough stack state that we will be able to return to
-	 * the point where vfork() was called in the code, not to the
-	 * point in the library code where the actual syscall int was
-	 * done - ajr 16th August 1999
-	 *
-	 * Stack was
-	 *         ip cs f ret
-	 * and will be
-	 *            ret cs f
-	 */
-	int ip, cs, fl;
+		/* When the parent returns, the stack frame will have gone so
+		 * save enough stack state that we will be able to return to
+		 * the point where vfork() was called in the code, not to the
+		 * point in the library code where the actual syscall int was
+		 * done - ajr 16th August 1999
+		 *
+		 * Stack was
+		 *         ip cs f ret
+		 * and will be
+		 *            ret cs f
+		 */
+		int ip, cs, fl;
 
-	ip = (int) get_ustack(currentp, 6);
-	cs = (int) get_ustack(currentp, 2);
-	fl = (int) get_ustack(currentp, 4);
-	currentp->t_regs.sp += 2;
-	sleep_on(&currentp->child_wait);
-	put_ustack(currentp, 0, ip);
-	put_ustack(currentp, 2, cs);
-	put_ustack(currentp, 4, fl);
+		ip = (int) get_ustack(currentp, 6);
+		cs = (int) get_ustack(currentp, 2);
+		fl = (int) get_ustack(currentp, 4);
+		currentp->t_regs.sp += 2;
+		sleep_on(&currentp->child_wait);
+		put_ustack(currentp, 0, ip);
+		put_ustack(currentp, 2, cs);
+		put_ustack(currentp, 4, fl);
 
     }
 

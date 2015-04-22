@@ -6,6 +6,7 @@
 typedef __s32			loff_t;
 typedef __s32			off_t;
 
+
 typedef __u32			daddr_t;
 typedef __u32			jiff_t;
 typedef __u32			lflag_t;
@@ -30,7 +31,8 @@ typedef __u16			umode_t;
 
 typedef __u8			cc_t;
 typedef __u8			sig_t;
-
+typedef __u8 			prio_t;
+typedef __u8 			prio_pol_t;
 /*@ignore@*/
 
 /* The next three lines cause splint to complain needlessly */

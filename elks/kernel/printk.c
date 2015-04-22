@@ -236,5 +236,7 @@ void panic(char *error, ...)
 
 void kernel_restarted(void)
 {
+	printk("kernel restarted");
+	while(1);
     panic("kernel restarted\n");
 }

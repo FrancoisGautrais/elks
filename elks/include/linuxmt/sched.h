@@ -6,6 +6,14 @@
 #define NOGROUP 0xFFFF
 #define KSTACK_BYTES 1024	/* Size of kernel stacks */
 
+#define   SCHED_OTHER 		0
+#define   SCHED_RR 			1
+#define   SCHED_FIFO 		2
+#define   SCHED_FIFO 		3
+#define   SCHED_BATCH 		4
+
+#define MAX_PRIO 8
+
 #include <linuxmt/types.h>
 #include <linuxmt/fs.h>
 #include <linuxmt/time.h>
@@ -31,6 +39,8 @@ struct fs_struct {
     struct inode		*root;
     struct inode		*pwd;
 };
+
+
 
 struct mm_struct {
     seg_t			cseg;
@@ -63,8 +73,11 @@ struct task_struct {
     gid_t			gid;
     gid_t			egid;
     gid_t			sgid;
-
+    
 /* Scheduling + status variables */
+    prio_t 			prio;
+    prio_pol_t		policy;
+	
     __s16			state;
     __u32			timeout;	/* for select() */
     struct wait_queue		*waitpt;	/* Wait pointer */
@@ -138,6 +151,8 @@ extern struct timeval xtime;
 #define for_each_task(p) \
 	for (p = &task[0] ; p!=&task[MAX_TASKS]; p++ )
 
+
+
 /* Scheduling and sleeping function prototypes */
 
 extern void schedule(void);
@@ -168,8 +183,29 @@ extern unsigned int get_ustack(struct task_struct *,int);
 extern void put_ustack(register struct task_struct *,int,int);
 
 extern void tswitch(void);
-
 /* This should be an inline function !!! */
 extern void select_wait(struct wait_queue *);
+
+
+
+
+
+/* RT functions */
+
+//a supprimer
+extern __ptask rt_tasks[MAX_PRIO];
+extern void print_rt_tasks(char* str);
+extern __ptask find_process_by_pid(pid_t pid);
+ struct sched_param
+ {
+	 int sched_priority;
+ };
+
+extern int sys_sched_setscheduler(pid_t pid, int policy,
+                        struct sched_param *param);
+
+extern int sys_sched_getscheduler(pid_t pid);
+extern int sys_sched_setparam(pid_t pid, struct sched_param* param);
+extern int sys_sched_getparam(pid_t pid, struct sched_param* param);
 
 #endif

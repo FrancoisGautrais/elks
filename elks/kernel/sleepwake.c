@@ -22,16 +22,16 @@
 void wait_set(register struct wait_queue *p)
 {
     register __ptask pcurrent = current;
-
+	//printk("%d wait %d\n", current->pid);
     if (pcurrent->waitpt)
-	panic("double wait");
+		panic("double wait");
     pcurrent->waitpt = p;
 }
 
 void wait_clear(struct wait_queue *p)
 {
     register __ptask pcurrent = current;
-
+	
     if (pcurrent->waitpt != p)
 	panic("wrong waitpt");
     pcurrent->waitpt = NULL;
@@ -42,8 +42,8 @@ static void __sleep_on(register struct wait_queue *p, __s16 state)
     register __ptask pcurrent = current;
 
     if (pcurrent == &task[0]) {
-	printk("task[0] trying to sleep ");
-	panic("from %x", (int)p);
+		printk("task[0] trying to sleep ");
+		panic("from %x", (int)p);
     }
     pcurrent->state = state;
     wait_set(p);
@@ -76,6 +76,7 @@ void wake_up_process(register struct task_struct *p)
 	save_flags(flags);
 	clr_irq();
 	p->state = TASK_RUNNING;
+	
 	if (!p->next_run){
 		add_to_runqueue(p);
 	}

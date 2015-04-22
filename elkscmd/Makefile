@@ -173,8 +173,6 @@ _populate_target: _mount_target
 	cp -p $(ELKSCMD_DIR)/ktcp/ktcp $(TARGET_MNT)/bin || true
 
 _mount_target:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	umount $(TARGET_FS) >/dev/null 2>&1 || true
 	dd if=/dev/zero of=$(TARGET_FS) bs=1024 count=$(TARGET_BLKS) 2>/dev/null
 	$(MKFS) $(MKFS_OPTS) $(TARGET_FS) >/dev/null
@@ -191,22 +189,15 @@ banner:
 	@echo "*"
 
 check_id:
-	@if [ "`id -u`" -ne "0" ]; then \
-		echo -e "\n\nERROR: Only root can build disk images.\n\n"; \
-	exit 1; \
-	fi
+
 
 full1680:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(FULL1680_TARGET_FS) \
 		TARGET_RFS=rfs \
 		TARGET_BLKS=$(FULL1680_TARGET_BLKS) \
 		INSTALL_KTCP=yes
 full3:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(FULL3_TARGET_FS) \
 		TARGET_RFS=rfs \
@@ -214,8 +205,6 @@ full3:
 		INSTALL_KTCP=yes
 
 full5:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(FULL5_TARGET_FS) \
 		TARGET_RFS=max_rfs \
@@ -223,8 +212,6 @@ full5:
 		INSTALL_KTCP=yes
 
 comb360:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(COMB360_TARGET_FS) \
 		TARGET_RFS=min_rfs \
@@ -232,16 +219,12 @@ comb360:
 		TARGET_BLKS=$(COMB360_TARGET_BLKS)
 
 comb:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(COMB_TARGET_FS) \
 		TARGET_RFS=min_rfs \
 		TARGET_BLKS=$(COMB_TARGET_BLKS)
 
 comb_net:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_bootable_target \
 		TARGET_FS=$(COMB_NET_TARGET_FS) \
 		TARGET_RFS=min_rfs \
@@ -253,8 +236,6 @@ boot: $(ELKS_DIR)/arch/i86/boot/Image
 	
 
 root:
-	@if [ "$(shell id -u)" != "0" ]; \
-	then echo -e "\n\n *** Only root can build disk images *** \n\n"; exit 1; fi
 	@$(MAKE) _build_nonbootable_target \
 		TARGET_FS=$(ROOT_TARGET_FS) \
 		TARGET_RFS=min_rfs \

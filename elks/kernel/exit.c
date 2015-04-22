@@ -46,26 +46,32 @@ void do_exit(int status)
 #define current pcurrent
      __ptask parent;
     register __ptask task;
-
+	
     _close_allfiles();
 
     /* Let go of the process */
     current->state = TASK_EXITING;
+    
+    /*while(current->p_child)
+    {
+		printk("waiting: %d\n", current->p_child->pid);
+		schedule();
+    }*/
     if (current->mm.cseg)
 	mm_free(current->mm.cseg);
     if (current->mm.dseg)
 	mm_free(current->mm.dseg);
 
     current->mm.cseg = current->mm.dseg = 0;
-
+	
     /* Keep all of the family stuff straight */
     if ((task = current->p_prevsib)) {
-	task->p_nextsib = current->p_nextsib;
+		task->p_nextsib = current->p_nextsib;
     }
     if ((task = current->p_nextsib)) {
-	task->p_prevsib = current->p_prevsib;
+		task->p_prevsib = current->p_prevsib;
     }
-
+	
     /* Ack. I hate repeating code like this */
 #if 0
     parent = current->p_parent;
@@ -78,11 +84,11 @@ void do_exit(int status)
     }
 #else
     if ((parent = current->p_parent)->p_child == current) {
-	if ((task = current->p_prevsib)
-	    || (task = current->p_nextsib)
-	    ) {
-	    parent->p_child = task;
-	}
+		if ((task = current->p_prevsib)
+			|| (task = current->p_nextsib)
+			) {
+			parent->p_child = task;
+		}
     }
 
     /* Ok... we're done with task, but we still need parent a few
@@ -115,8 +121,17 @@ void do_exit(int status)
     next_task_slot = current;
     task_slots_unused++;
     wake_up(&parent->child_wait);
+    printk("exit %d\n", current->pid);
     schedule();
-    panic("Returning from sys_exit!\n");
+    printk("PANIC : %d ", current->pid);
+    {
+		int i;
+		printk("( ");
+		for(i=0; i<MAX_PRIO; i++) printk("(%d,%d,%d) ", rt_tasks[i]->prev_run, rt_tasks[i], rt_tasks[i]->next_run);
+		printk(")\n");
+	}
+    while(1);
+    panic("Returning from sys_exit of %d!\n", current->pid);
 }
 #undef current
 

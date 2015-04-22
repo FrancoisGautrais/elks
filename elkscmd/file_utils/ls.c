@@ -114,7 +114,7 @@ static void pushstack(struct stack *pstack, char *entry)
 
 static void sortstack(struct stack *pstack)
 {
-    qsort(pstack->buf, pstack->size, sizeof(char*), namesort);
+    //qsort(pstack->buf, pstack->size, sizeof(char*), namesort);
 }
 
 static void getfiles(char *name, struct stack *pstack, int flags)
@@ -129,30 +129,33 @@ static void getfiles(char *name, struct stack *pstack, int flags)
     /*
      * Do all the files in a directory.
      */
-
     dirp = opendir(name);
+    
     if (dirp == NULL) {
-	perror(name);
-	exit(1);
+		perror(name);
+		exit(1);
     }
+    
     while ((dp = readdir(dirp)) != NULL) {
-	valid = 0;
-	if ((flags & LSF_ALL) || (*dp->d_name != '.'))
-	    valid = 1;
-	else if ((flags & LSF_ALLX) && (dp->d_name[1])
-			&& (dp->d_name[1] != '.' || dp->d_name[2]))
-	    valid = 1;
-	if (valid) {
-	    *fullname = '\0';
-	    strcpy(fullname, name);
-	    if (!endslash)
-		strcat(fullname, "/");
-	    strcat(fullname, dp->d_name);
-	    pushstack(pstack,strdup(fullname));
-	}
+		valid = 0;
+		if ((flags & LSF_ALL) || (*dp->d_name != '.'))
+			valid = 1;
+		else if ((flags & LSF_ALLX) && (dp->d_name[1])
+				&& (dp->d_name[1] != '.' || dp->d_name[2]))
+			valid = 1;
+		if (valid) {
+			*fullname = '\0';
+			strcpy(fullname, name);
+			if (!endslash)
+				strcat(fullname, "/");
+			strcat(fullname, dp->d_name);
+			pushstack(pstack,strdup(fullname));
+		}
     }
     closedir(dirp);
+		printf("8\n");
     sortstack(pstack);
+		printf("9\n");
 }
 
 
@@ -178,51 +181,51 @@ static void lsfile(char *name, struct stat *statbuf, int flags)
     *cp = '\0';
 
     if (flags & LSF_INODE) {
-	sprintf(cp, "%5ld ", statbuf->st_ino);
-	cp += strlen(cp);
+		sprintf(cp, "%5ld ", statbuf->st_ino);
+		cp += strlen(cp);
     }
 
     if (flags & LSF_LONG) {
-	strcpy(cp, modestring(statbuf->st_mode));
-	cp += strlen(cp);
+		strcpy(cp, modestring(statbuf->st_mode));
+		cp += strlen(cp);
 
-	sprintf(cp, "%3lu ", (unsigned long)statbuf->st_nlink);
-	cp += strlen(cp);
+		sprintf(cp, "%3lu ", (unsigned long)statbuf->st_nlink);
+		cp += strlen(cp);
 
-	if (!useridknown || (statbuf->st_uid != userid)) {
-	    pwd = getpwuid(statbuf->st_uid);
-	    if (pwd)
-		strcpy(username, pwd->pw_name);
-	    else
-		sprintf(username, "%d", statbuf->st_uid);
-	    userid = statbuf->st_uid;
-	    useridknown = 1;
-	}
+		if (!useridknown || (statbuf->st_uid != userid)) {
+			pwd = getpwuid(statbuf->st_uid);
+			if (pwd)
+			strcpy(username, pwd->pw_name);
+			else
+			sprintf(username, "%d", statbuf->st_uid);
+			userid = statbuf->st_uid;
+			useridknown = 1;
+		}
 
-	sprintf(cp, "%-8s ", username);
-	cp += strlen(cp);
+		sprintf(cp, "%-8s ", username);
+		cp += strlen(cp);
 
-	if (!groupidknown || (statbuf->st_gid != groupid)) {
-	    grp = getgrgid(statbuf->st_gid);
-	    if (grp)
-		strcpy(groupname, grp->gr_name);
-	    else
-		sprintf(groupname, "%d", statbuf->st_gid);
-	    groupid = statbuf->st_gid;
-	    groupidknown = 1;
-	}
+		if (!groupidknown || (statbuf->st_gid != groupid)) {
+			grp = getgrgid(statbuf->st_gid);
+			if (grp)
+			strcpy(groupname, grp->gr_name);
+			else
+			sprintf(groupname, "%d", statbuf->st_gid);
+			groupid = statbuf->st_gid;
+			groupidknown = 1;
+		}
 
-	sprintf(cp, "%-8s ", groupname);
-	cp += strlen(cp);
+		sprintf(cp, "%-8s ", groupname);
+		cp += strlen(cp);
 
-	if (S_ISBLK(statbuf->st_mode) || S_ISCHR(statbuf->st_mode))
-	    sprintf(cp, "%3lu, %3lu ", (unsigned long)(statbuf->st_rdev >> 8),
-				     (unsigned long)(statbuf->st_rdev & 0xff));
-	else
-	    sprintf(cp, "%8lu ", (unsigned long)statbuf->st_size);
-	cp += strlen(cp);
+		if (S_ISBLK(statbuf->st_mode) || S_ISCHR(statbuf->st_mode))
+			sprintf(cp, "%3lu, %3lu ", (unsigned long)(statbuf->st_rdev >> 8),
+						 (unsigned long)(statbuf->st_rdev & 0xff));
+		else
+			sprintf(cp, "%8lu ", (unsigned long)statbuf->st_size);
+		cp += strlen(cp);
 
-	sprintf(cp, " %-12s ", timestring(statbuf->st_mtime));
+		sprintf(cp, " %-12s ", timestring(statbuf->st_mtime));
     }
 
     fputs(buf, stdout);
@@ -397,104 +400,112 @@ int main(int argc, char **argv)
 
     initstack(&files);
     initstack(&dirs);
-
     flags = 0;
     recursive = 1;
 
 /*
  * Set relevant flags for command name
  */
-
+	
     while ( --argc && ((cp = * ++argv)[0]=='-') ) {
-	while (*++cp) {
-	    switch(*cp) {
-		case 'l':
-			flags |= LSF_LONG;
-			break;
-		case 'd':
-			flags |= LSF_DIR;
-			recursive = 0;
-			break;
-		case 'R':
-			recursive = -1;
-			break;
-		case 'i':
-			flags |= LSF_INODE;
-			break;
-		case 'a':
-			flags |= LSF_ALL;
-			break;
-		case 'A':
-			flags |= LSF_ALLX;
-			break;
-		case 'F':
-			flags |= LSF_CLASS;
-			break;
-		case 'r':
-			reverse = -reverse;
-			break;
-		default:
-			if (~flags) fprintf(stderr, "unknown option '%c'\n", *cp);
-			goto usage;
-	    }
-	}
+		while (*++cp) {
+			switch(*cp) {
+			case 'l':
+				flags |= LSF_LONG;
+				break;
+			case 'd':
+				flags |= LSF_DIR;
+				recursive = 0;
+				break;
+			case 'R':
+				recursive = -1;
+				break;
+			case 'i':
+				flags |= LSF_INODE;
+				break;
+			case 'a':
+				flags |= LSF_ALL;
+				break;
+			case 'A':
+				flags |= LSF_ALLX;
+				break;
+			case 'F':
+				flags |= LSF_CLASS;
+				break;
+			case 'r':
+				reverse = -reverse;
+				break;
+			default:
+				if (~flags) fprintf(stderr, "unknown option '%c'\n", *cp);
+				goto usage;
+			}
+		}
     }
     if (!argc) {
-	argv = def;
-	argc = 1;
+		argv = def;
+		argc = 1;
     }
     TRACESTRING(*argv)
+    
     if (argv[1])
-	flags |= LSF_MULT;
+		flags |= LSF_MULT;
 
+	
     for ( ; *argv; argv++) {
-	if (LSTAT(*argv, &statbuf) < 0) {
-	    perror(*argv);
-	    exit(1);
-	}
-	if (recursive && S_ISDIR(statbuf.st_mode))
-	    pushstack(&dirs, strdup(*argv) );
-	else
-	    pushstack(&files, strdup(*argv) );
+		if (LSTAT(*argv, &statbuf) < 0) {
+			perror(*argv);
+			exit(1);
+		}
+		if (recursive && S_ISDIR(statbuf.st_mode))
+			pushstack(&dirs, strdup(*argv) );
+		else
+			pushstack(&files, strdup(*argv) );
     }
     if (recursive)
-	recursive--;
+		recursive--;
+	
     sortstack(&files);
     do {
-	setfmt(&files, flags);
+		setfmt(&files, flags);
 /*	if (flags & LSF_MULT)
 	    printf("\n%s:\n", name);
- */
-	while (files.size) {
-	    name = popstack(&files);
-	    TRACESTRING(name)
-	    if (LSTAT(name, &statbuf) < 0) {
-		perror(name);
-		free(name);
-		continue;
-	    }
-	    isDir = S_ISDIR(statbuf.st_mode);
-	    if (!isDir || !recursive || (flags&LSF_LONG))
-		lsfile(name, &statbuf, flags);
-	    if (isDir && recursive)
-		pushstack( &dirs, name);
-	    else
-		free(name);
-	}
-	if (dirs.size) {
-	    getfiles( name = popstack(&dirs), &files, flags );
-	    if (strcmp(name,".")) {
-		if (col) {
-		    col=0;
-		    fputc('\n', stdout);
+ */	
+		while (files.size) {
+			name = popstack(&files);
+			TRACESTRING(name)
+			if (LSTAT(name, &statbuf) < 0) {
+			perror(name);
+			free(name);
+			continue;
+			}
+			isDir = S_ISDIR(statbuf.st_mode);
+			if (!isDir || !recursive || (flags&LSF_LONG))
+			{
+				lsfile(name, &statbuf, flags);
+			}
+			if (isDir && recursive)
+				pushstack( &dirs, name);
+			else
+			free(name);
 		}
-		printf("\n%s:\n", name);
-	    }
-	    free(name);
-	    if (recursive)
-		recursive--;
-	}
-    } while (files.size || dirs.size);
+		if (dirs.size) {
+			name = popstack(&dirs);
+			getfiles( name, &files, flags );
+			if (strcmp(name,".")) {
+				
+				if (col) {
+					col=0;
+					fputc('\n', stdout);
+				}
+				printf("\n%s:\n", name);
+			}
+			
+			free(name);
+			
+			if (recursive)
+				recursive--;
+		}
+    }while (files.size || dirs.size);
     if (~flags & LSF_LONG)
 	fputc('\n', stdout);
     exit(0);

@@ -133,9 +133,11 @@ sh_main(argc, argv)
 
 	printf("Stand-alone shell (version %s)\n", version);
 	fflush(stdout);
+	printf("1\n");
 	signal(SIGINT, catchint);
 	signal(SIGQUIT, catchquit);
 	signal(SIGTSTP, SIG_IGN);
+	printf("2\n");
 
 	if (getenv("PATH") == NULL)
 		putenv("PATH=/bin:/usr/bin:/etc");
@@ -158,6 +160,7 @@ sh_main(argc, argv)
 	} else {
 		readfile(NULL);
 	}
+	
 #else
 	readfile(NULL);
 #endif
@@ -175,17 +178,22 @@ readfile(name)
 	char	*name;
 {
 	FILE	*fp;
+	int tmp=1;
 	int	cc;
 	char	buf[CMDLEN];
 #ifdef CMD_SOURCE
 	int	ttyflag;
-
+	
+	printf("a\n");
 	if (sourcecount >= MAXSOURCE) {
 		fprintf(stderr, "Too many source files\n");
 		return;
 	}
-
+	
+	printf("b\n");
 	fp = stdin;
+	
+	printf("c\n");
 	if (name) {
 		fp = fopen(name, "r");
 		if (fp == NULL) {
@@ -193,14 +201,21 @@ readfile(name)
 			return;
 		}
 	}
+	
+	printf("d\n");
 	sourcefiles[sourcecount++] = fp;
-
+	
+	
+	printf("e\n");
 	ttyflag = isatty(fileno(fp));
 #else
 	fp = stdin;
 #endif
-
-	while (0) {
+	printf("f\n");
+	while (1) 
+	{
+	printf("new : \n");
+		tmp=0;
 		fflush(stdout);
 		showprompt();
 
@@ -229,6 +244,7 @@ readfile(name)
 		buf[cc] = '\0';
 
 		command(buf);
+	printf("h\n");
 	}
 
 	if (ferror(fp)) {

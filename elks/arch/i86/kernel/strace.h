@@ -119,6 +119,10 @@ struct syscall_info elks_table[] = {
 #ifdef CONFIG_SYS_VERSION
     { 74, "sys_knlvsn",          1, { P_PSTR,     P_NONE,     P_NONE      } },
 #endif
+    { 154, "sys_sched_setparam",         3, { P_SLONG,   P_PDATA,    P_NONE    } },
+    { 155, "sys_sched_getparam",         3, { P_SLONG,   P_PDATA,    P_NONE    } },
+    { 156, "sys_sched_setscheduler",         3, { P_SLONG,   P_SLONG,    P_PDATA    } },
+    { 157, "sys_sched_getscheduler",         1, { P_SLONG,   P_NONE,    P_NONE    } },
     {  0, "no_sys_call",         0, { P_NONE,     P_NONE,     P_NONE      } }
 };
 
