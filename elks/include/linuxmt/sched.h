@@ -13,8 +13,8 @@
 #define   SCHED_BATCH 		4
 
 #define MAX_PRIO 8
-
 #define CONFIG_RT
+
 
 #include <linuxmt/types.h>
 #include <linuxmt/fs.h>

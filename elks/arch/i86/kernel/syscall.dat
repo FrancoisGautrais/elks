@@ -97,6 +97,7 @@ sched_setparam          +154     2	#= CONFIG_RT
 sched_getparam          +155     2	#= CONFIG_RT	
 sched_setscheduler      +156     3	#= CONFIG_RT
 sched_getscheduler      +157     1	#= CONFIG_RT
+sleep      +162     2	
 #
 # Name			No	Args	Flag&comment
 #

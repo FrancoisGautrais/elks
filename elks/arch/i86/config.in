@@ -10,6 +10,8 @@ mainmenu_option next_comment
 
     bool 'Include development code/drivers'	CONFIG_EXPERIMENTAL	n
     bool 'Modular kernel (NOT IMPLEMENTED)'	CONFIG_MODULES		n
+    bool 'RT Linux (EXPERIMENTAL)'		CONFIG_RT		y
+    bool 'Count jiffies for each process (EXPERIMENTAL)' CONFIG_CALC_TIME y
 endmenu
 
 mainmenu_option next_comment

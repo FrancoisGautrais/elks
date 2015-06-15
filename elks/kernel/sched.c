@@ -175,7 +175,13 @@ static void process_timeout(int __data)
 		prio_pol_t rtt;
 		for(rtt=0; rtt<MAX_PRIO; rtt++)
 			if(rt_tasks[rtt]) 
-				return rt_tasks[rtt];
+			{
+				//on ignore les taches stoppees 
+				__ptask pp = rt_tasks[rtt];
+				while(pp->state != TASK_STOPPED  && pp->next_run!=pp);
+				return  pp;
+			}
+				
 		return prev->next_run;
 	}
 #else
@@ -188,14 +194,13 @@ static void process_timeout(int __data)
  *  vanish quietly for a while and someone elses thread will return
  *  from here.
  */
-
 void schedule(void)
 {
     register __ptask prev;
     register __ptask next;
     jiff_t timeout = 0UL;
     prev = current;
-    next =find_next_task(prev);
+    next=find_next_task(prev);
     
     if (prev->t_kstackm != KSTACK_MAGIC)
         panic("Process %d exceeded kernel stack limit! magic %x\n", 
@@ -361,6 +366,16 @@ static void run_timer_list(void)
 }
 
 /* maybe someday I'll implement these profiling things -PL */
+struct timer_list* find_timer()
+{
+	register int i;
+	for(i=0; i<MAX_USER_TIMERS; i++)
+		if(!user_timers[i].tl_next && !user_timers[i].tl_prev)
+			return &user_timers[i];
+	return NULL;
+}
+
+
 
 #if 0
 
@@ -426,6 +441,12 @@ void sched_init(void)
 	for(; rtt < MAX_PRIO; rtt++)
 		rt_tasks[rtt]=NULL;
 	
+	for(rtt=0; rtt < MAX_USER_TIMERS; rtt++)
+	{
+		user_timers[rtt].tl_next=NULL;
+		user_timers[rtt].tl_prev=NULL;
+		user_timers[rtt].tl_function=NULL;
+	}
 	
 /*
  *	Now create task 0 to be ourself.
@@ -493,4 +514,19 @@ int sys_sched_getparam(pid_t pid, struct sched_param* param)
 	
 	return 0;
 }
+
+
+
 #endif //RT
+
+int sys_sleep(pid_t pid, int ms)
+{
+	__ptask t=find_process_by_pid(pid);
+	struct timer_list* tl=find_timer();
+	printk("SLEEP\n");
+	if(!tl) return -ENXIO;
+	tl->tl_data=pid;
+	add_timer(tl);
+	t->state=TASK_STOPPED;
+	return 0;
+}

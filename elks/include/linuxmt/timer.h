@@ -55,6 +55,10 @@
 
 #define DIGI_TIMER	29
 
+
+//the TIMER for users
+#define MAX_USER_TIMERS 32
+
 struct timer_struct {
     jiff_t expires;
     void (*fn) ();
@@ -84,6 +88,8 @@ struct timer_list {
     void (*tl_function) ();
 };
 
+struct timer_list user_timers[MAX_USER_TIMERS];
+
 struct pt_regs;
 extern void init_timer(struct timer_list *);
 extern void add_timer(struct timer_list *);
@@ -91,5 +97,8 @@ extern int del_timer(struct timer_list *);
 extern void timer_tick(int, struct pt_regs *, void *);
 extern void enable_timer_tick(void);
 extern void stop_timer(void);
+
+extern struct timer_list* find_timer();
+
 
 #endif
